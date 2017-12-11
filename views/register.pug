@@ -1,0 +1,41 @@
+extends layout
+
+block content
+    h1= title
+    form(id='register_form', method='POST', action='/users/register')
+        label(for='username') Username
+        input#username(type='text', name='username')
+        br
+        label(for='pw') PW
+        input#pw(type='password', name='password')
+        br
+        label(for='confirm_pw') Confirm PW
+        input#confirm_pw(type='password')
+        br
+        input(id='submit', type='button', value='회원가입')
+    a(href='/users/login') 로그인
+
+    script.
+        $(document).ready(function () {
+            $('#submit').on('click', function () {
+                if ($('#pw').val() !== $('#confirm_pw').val()) {
+                    alert('두 비밀번호가 같지 않습니다.');
+                } else {
+                    var form_data = $('#register_form').serialize();
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '/users/register',
+                        data: form_data,
+                        success: function (data) {
+                        alert(data.message);
+                        if (data.status === 0)
+                            window.location.replace("/users/login");
+                        else
+                            window.location.replace("/users/register");
+                        }
+                    });
+                }
+
+            });
+        });

@@ -1,0 +1,236 @@
+extends layout
+
+block head
+
+    script(src='/lib/moment.min.js')
+    script(src='/lib/fullcalendar/fullcalendar.min.js')
+    script(src='/lib/fullcalendar/locale/ko.js')
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous")
+    script(src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous")
+    link(rel='stylesheet' href='lib/fullcalendar/fullcalendar.min.css')
+    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+    integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous")
+
+block content
+    a(href='/') 메인으로
+    br
+    a(href='/users/logout') 로그아웃
+    div#calendar
+
+    // Add Modal(popup)
+    div(class='modal fade' id='add' tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true")
+        div(class='modal-dialog' role='document')
+            div(class='modal-content')
+                div(class='modal-header')
+                    h5(class='modal-title') 새 일정 추가
+                    button(type='button' class='close' data-dismiss='modal' aria-label='Close')
+                        span(aria-hidden='true') &times;
+                div(class='modal-body')
+                    datalist(id='tag_list')
+
+                    input(type='text' id='event_name' name='event_name' placeholder='이름')
+                    input(type='text' id='tag_name' name='tag_name' placeholder='태그명' list='tag_list')
+                    input(type='hidden' id='start' name='start')
+                    input(type='hidden' id='end' name='end')
+
+
+                div(class='modal-footer')
+                    button(type='button' class='btn btn-secondary' data-dismiss='modal') 닫기
+                    button(type='button' class='btn btn-primary' id='add_btn') 확인
+
+    // Edit Modal(popup)
+    div(class='modal fade' id='edit' tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true")
+            div(class='modal-dialog' role='document')
+                div(class='modal-content')
+                    div(class='modal-header')
+                        h5(class='modal-title') 새 일정 추가
+                        button(type='button' class='close' data-dismiss='modal' aria-label='Close')
+                            span(aria-hidden='true') &times;
+                    div(class='modal-body')
+                        datalist(id='tag_list2')
+
+                        input(type='text' id='event_name2' name='event_name' placeholder='이름')
+                        input(type='text' id='tag_name2' name='tag_name' placeholder='태그명' list='tag_list2')
+                        input(type='hidden' id='event_id' name='event_id')
+                        input(type='hidden' id='tag_id' name='tag_id')
+
+
+                    div(class='modal-footer')
+                        button(type='button' class='btn btn-secondary' data-dismiss='modal') 닫기
+                        button(type='button' class='btn btn-danger' id='delete_btn') 삭제
+                        button(type='button' class='btn btn-primary' id='edit_btn') 수정
+
+    script.
+        $(document).ready(function () {
+            // page is now ready, initialize the calendar...
+            var tags;
+
+            $('#calendar').fullCalendar({
+                // put your options and callbacks here
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                displayEventTime: false,
+                selectable: true,
+                selectHelper: true,
+                select: function (start, end) {
+                    var calendar = $('#calendar');
+
+                    document.getElementById('tag_list').innerHTML = "";
+                    $('#add').find('input').val('');
+                    $('#start').val(moment(start).format("YYYY-MM-DD"));
+                    $('#end').val(moment(end).format("YYYY-MM-DD"));
+
+                    $('#add').modal('show');
+
+                    $.get('/calendar/tags', function (data) {
+                        tags = data.tags;
+
+                        for (var i in tags) {
+                            $('#tag_list').append("<option value="+tags[i].name+"/>");
+                        }
+                    });
+
+                    calendar.fullCalendar('unselect');
+                },
+                eventClick: function(event) {
+                    var calendar = $('#calendar');
+
+                    document.getElementById('tag_list2').innerHTML = "";
+                    $('#event_name2').val(event.title);
+                    $('#tag_name2').val(event.tag_name);
+                    $('#event_id').val(event.event_id);
+                    $('#tag_id').val(event.tag_id);
+
+                    $('#edit').modal('show');
+
+                    $.get('/calendar/tags', function (data) {
+                        tags = data.tags;
+
+                        for (var i in tags) {
+                            $('#tag_list2').append("<option value=" + tags[i].name + "/>");
+                        }
+                    });
+
+                    calendar.fullCalendar('unselect');
+                },
+                events: '/calendar/events'
+            });
+
+
+            $('#add_btn').on('click', function () {
+                var tag_names = tags.map(function(t) { return t.name; });
+
+
+                if ($('#tag_name').val() === "" || !$('#event_name').val() === "") alert('값을 입력해주세요');
+                else if (tag_names.indexOf($('#tag_name').val()) < 0) {
+
+                    $.post('/calendar/tags', { 'tag_name': $('#tag_name').val() }, function (data) {
+                        if (data.status === 0) {
+                            $.post('/calendar/events',
+                                {
+                                    'tag_name': $('#tag_name').val(),
+                                    'event_name': $('#event_name').val(),
+                                    'start': $('#start').val(),
+                                    'end': $('#end').val()
+                                }, function (data1) {
+                                    if (data1.status === 0) {
+                                        $('#add').modal('hide');
+                                        $('#calendar').fullCalendar('refetchEvents');
+                                    } else {
+                                        alert('입력값을 확인하고 다시 시도해 주세요!');
+                                    }
+                                });
+                        } else {
+                            alert('실패했습니다.');
+                        }
+                    });
+                } else {
+                    $.post('/calendar/events', {
+                        'tag_name': $('#tag_name').val(),
+                        'event_name': $('#event_name').val(),
+                        'start': $('#start').val(),
+                        'end': $('#end').val()
+                    }, function (data) {
+                        if (data.status === 0) {
+                            $('#add').modal('hide');
+                            $('#calendar').fullCalendar('refetchEvents');
+                        } else {
+                            alert('입력값을 확인하고 다시 시도해 주세요!!');
+                        }
+                    });
+                }
+            });
+
+            $('#edit_btn').on('click', function () {
+                var tag_names = tags.map(function(t) { return t.name; });
+                var event_id = $('#event_id').val();
+
+                if ($('#tag_name2').val() === "" || !$('#event_name2').val() === "") alert('값을 입력해주세요');
+                else if (tag_names.indexOf($('#tag_name2').val()) < 0) {
+
+                    $.post('/calendar/tags', { 'tag_name': $('#tag_name2').val() }, function (data) {
+                        if (data.status === 0) {
+                            $.ajax({
+                                type: 'PUT',
+                                url: '/calendar/events/'+event_id,
+                                data: {
+                                    'tag_id': data.tag_id,
+                                    'event_name': $('#event_name2').val()
+                                },
+                                success: function (data1) {
+                                    if (data1.status === 0) {
+                                        $('#edit').modal('hide');
+                                        $('#calendar').fullCalendar('refetchEvents');
+                                    } else {
+                                        alert('입력값을 확인하고 다시 시도해 주세요!');
+                                    }
+                                }
+                            });
+                        } else {
+                            alert('실패했습니다.');
+                        }
+                    });
+                } else {
+                    $.ajax({
+                        type: 'PUT',
+                        url: '/calendar/events/'+event_id,
+                        data: {
+                            'tag_id': $('#tag_id').val(),
+                            'event_name': $('#event_name2').val()
+                        },
+                        success: function (data1) {
+                            if (data1.status === 0) {
+                                $('#edit').modal('hide');
+                                $('#calendar').fullCalendar('refetchEvents');
+                            } else {
+                                alert('입력값을 확인하고 다시 시도해 주세요!!');
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 일정 삭제
+            $('#delete_btn').on('click', function () {
+                var event_id = $('#event_id').val();
+
+                if(event_id) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/calendar/events/'+event_id,
+                        success: function (data) {
+                            if (data.status === 0) {
+                                $('#edit').modal('hide');
+                                $('#calendar').fullCalendar('refetchEvents');
+                            } else {
+                                alert('실패했습니다.');
+                            }
+                        }
+                    });
+                }
+            });
+
+        });

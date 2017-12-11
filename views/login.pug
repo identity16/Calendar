@@ -1,0 +1,32 @@
+extends layout
+
+block content
+    h1= title
+    form(id='login_form', method='POST', action='/users/login')
+        label(for='username') Username :
+        input#username(type='text', name='username')
+        br
+        label(for='pw') PW :
+        input#pw(type='password', name='password')
+        br
+        input#submit(type='button', value='로그인')
+    a(href='/users/register') 회원가입
+
+    script.
+        $(document).ready(function() {
+            $('#submit').on('click', function () {
+                var form_data = $('#login_form').serialize();
+                $.ajax({
+                    type: 'POST',
+                    url: '/users/login',
+                    data: form_data,
+                    success: function (data) {
+                        alert(data.message);
+                        if (data.status === 0)
+                            window.location.replace("/calendar");
+                        else
+                            window.location.replace("/users/login");
+                    }
+                });
+            });
+        });

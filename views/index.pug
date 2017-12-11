@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  h1= title
+  h2 hello! #{username}
+  p Welcome to #{title}
+  a(href='/calendar') 달력으로
+  br
+  a(href='/users/logout') 로그아웃
