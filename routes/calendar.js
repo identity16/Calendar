@@ -8,7 +8,7 @@ var router = express.Router();
 var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'root',
-	password: ‘PW’,
+	password: 'PW',
 	database : 'cal_db'
 });
 conn.connect();
@@ -99,29 +99,32 @@ router.get('/events', function(req, res, next) {
 		}
 		
 		
-		conn.query(get_events, function(err1, results1) {
-			if(err1) throw err1;
-			
-			if(results1.length >= 0) {
-				results1.forEach(function(r) {
-					r.status = 0;
-					r.color = colors[tags.indexOf(r.tag_id)];
-					r.tag_name = names[tags.indexOf(r.tag_id)];
-					
-					return r;
-				});
-				res.json(results1);
-			} else {
-				results1.forEach(function(r) {
-					r.set('status', 1);
-					
-					return r;
-				});
-				res.json(results1);
-			}
-			
-			
-		});
+		
+		if(tags.length !== 0) {
+			conn.query(get_events, function (err1, results1) {
+				if (err1) throw err1;
+				
+				if (results1.length >= 0) {
+					results1.forEach(function (r) {
+						r.status = 0;
+						r.color = colors[tags.indexOf(r.tag_id)];
+						r.tag_name = names[tags.indexOf(r.tag_id)];
+						
+						return r;
+					});
+					res.json(results1);
+				} else {
+					results1.forEach(function (r) {
+						r.set('status', 1);
+						
+						return r;
+					});
+					res.json(results1);
+				}
+			});
+		} else {
+			res.json([]);
+		}
 	
 	});
 });
