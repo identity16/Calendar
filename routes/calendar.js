@@ -8,7 +8,7 @@ var router = express.Router();
 var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'root',
-	password: 'PW',
+	password: '!dnjswns930',
 	database : 'cal_db'
 });
 conn.connect();
@@ -73,6 +73,7 @@ router.post('/tags', function(req, res, next) {
 		} else {
 			res.json({
 				'status': 0,
+				'tag_id': result.insertId,
 				'message': 'Success'
 			});
 		}

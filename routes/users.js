@@ -7,7 +7,7 @@ var router = express.Router();
 var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'root',
-	password: 'PW',
+	password: '!dnjswns930',
 	database : 'cal_db'
 });
 conn.connect();
