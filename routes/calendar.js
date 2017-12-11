@@ -8,7 +8,7 @@ var router = express.Router();
 var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'root',
-	password: 'PW',
+	password: ‘PW’,
 	database : 'cal_db'
 });
 conn.connect();
@@ -95,8 +95,9 @@ router.get('/events', function(req, res, next) {
 		for(var i=0; i<tags.length; i++) {
 			get_events += tags[i];
 			if(i !== tags.length-1) get_events += ', ';
+			else get_events += ')';
 		}
-		get_events += ')';
+		
 		
 		conn.query(get_events, function(err1, results1) {
 			if(err1) throw err1;
